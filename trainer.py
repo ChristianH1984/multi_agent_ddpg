@@ -11,24 +11,25 @@ class Trainer(object):
 		scores = []
 
 		for i in range(max_iter):
-			score = 0.0
+			score = []
 			env_info = self.env.reset(train_mode=True)[brain_name]
-			state = env_info.vector_observations[0]
+			state = env_info.vector_observations
 			self.agent.reset()
 			done = False
 			while not done:
 				action = self.agent.act(state)
 				env_info = self.env.step(action)[brain_name]
-				next_state, reward, done = env_info.vector_observations[0], env_info.rewards[0], env_info.local_done[0]
+				next_state, reward, done = env_info.vector_observations, env_info.rewards, env_info.local_done
 				self.agent.step(state, action, reward, next_state, done)
 				state = next_state
-				score += reward
+				score.append(reward)
 
-			scores.append(score)
+			scores.append(np.max((np.sum(np.array(score).reshape(-1, len(score)), axis=0))))
+
 			if np.mean(scores[-100:]) > 1.0:
 				print("\nProblem solved after {0} episodes".format(i))
 				return scores
-			print('\rEpisode {}\tAverage Score: {:.2f},   {:.2f}'.format(i, np.mean(scores[-20:]), score), end="")
+			print('\rEpisode {}\tAverage Score: {:.2f}'.format(i, np.mean(scores[-20:])), end="")
 			if i % 100 == 0:
 				print('\rEpisode {}\tAverage Score: {:.2f}'.format(i, np.mean(scores[-20:])))
 

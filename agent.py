@@ -104,6 +104,12 @@ class DeterministicActorCriticAgent(BaseAgent):
 		"""
 		states, actions, rewards, next_states, dones = experiences
 
+		states = states[0]
+		actions = actions[0]
+		rewards = rewards[0]
+		next_states = next_states[0]
+		dones = dones[0]
+
 		next_actions = self.actor_target(next_states)
 
 		next_states_actions = torch.cat((next_states, next_actions), 1)
