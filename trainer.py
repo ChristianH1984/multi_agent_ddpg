@@ -15,8 +15,8 @@ class Trainer(object):
 			env_info = self.env.reset(train_mode=True)[brain_name]
 			state = env_info.vector_observations
 			self.agent.reset()
-			done = False
-			while not done:
+			done = [[False]]
+			while not np.any(done):
 				action = self.agent.act(state)
 				env_info = self.env.step(action)[brain_name]
 				next_state, reward, done = env_info.vector_observations, env_info.rewards, env_info.local_done
@@ -24,7 +24,7 @@ class Trainer(object):
 				state = next_state
 				score.append(reward)
 
-			scores.append(np.max((np.sum(np.array(score).reshape(-1, len(score)), axis=0))))
+			scores.append(np.max((np.sum(np.array(score).reshape(-1, reward.shape[0]), axis=0))))
 
 			if np.mean(scores[-100:]) > 1.0:
 				print("\nProblem solved after {0} episodes".format(i))
