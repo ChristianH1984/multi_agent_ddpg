@@ -1,4 +1,4 @@
-# Collaboration and Competition: Multi Actor Deep Deterministic Policy Gradient
+# Collaboration and Competition: Multi Agent Deep Deterministic Policy Gradient
 
 The repository provides an implementation of a Multi Agent Deep Deterministic Policy Gradient algorithm to solve the 
 unity Tennis problem.
