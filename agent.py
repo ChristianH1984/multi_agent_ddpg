@@ -156,7 +156,7 @@ class StochasticActorCriticAgent(BaseAgent):
 
 		self.critic_local.optimizer.zero_grad()
 		critic_error.backward()
-		torch.nn.utils.clip_grad_norm(self.critic_local.parameters(), 1)
+		torch.nn.utils.clip_grad_norm_(self.critic_local.parameters(), 1)
 		self.critic_local.optimizer.step()
 
 		actions, log_probs = self.actor_local.act(states)
@@ -216,12 +216,12 @@ class MultiAgentDeterministicActorCriticAgent(BaseAgent):
 		for actor in self.actors_local:
 			actor.eval()
 		with torch.no_grad():
-			actions = self._compute_next_actions(self, self.actors_local, state)#self.actor_local(state)
+			actions = self._compute_next_actions(self.actors_local, state)#self.actor_local(state)
 		for actor in self.actors_local:
 			actor.train()
 		actions = actions.cpu().data.numpy()
-		actions += self.noise.sample().reshape(-1, actions.shape[1])
-		return np.clip(actions, -1, 1)
+		actions += self.noise.sample().reshape(2, 1, 2)
+		return np.clip(actions, -1, 1).reshape(2, 2)
 
 	def learn(self, experiences):
 		"""Update value parameters using given batch of experience tuples.
@@ -232,41 +232,27 @@ class MultiAgentDeterministicActorCriticAgent(BaseAgent):
 		"""
 		states, actions, rewards, next_states, dones = experiences
 
-		#next_actions = self.actor_target(next_states)
-		next_actions = self._compute_next_actions(self.actor_target, next_states)
-
+		next_actions = self._compute_next_actions(self.actors_target, next_states)
 		next_states_actions = torch.cat((next_states.permute(1, 0, 2).reshape(self.batch_size, -1),
 										 next_actions.permute(1, 0, 2).reshape(self.batch_size, -1)), 1)
+
 		states_actions = torch.cat((states.float().permute(1, 0, 2).reshape(self.batch_size, -1),
 									actions.float().permute(1, 0, 2).reshape(self.batch_size, -1)), 1)
 
-		for i in range(len(self.critic_local)):
-			self._train_critic(self.critic_local[i], self.critic_target[i], states_actions, next_states_actions, rewards[i], dones[i])
+		for i in range(len(self.critics_local)):
+			self._train_critic(self.critics_local[i], self.critics_target[i], states_actions,
+							   next_states_actions, rewards[i], dones[i])
 
-		for i in range(len(self.actor_local)):
-			self._train_actor(self.actor_local[i], self.actor_target[i], states[i])
-		#y_target = 100 * rewards + self.gamma * self.critic_target(next_states_actions)*(1 - dones)
-		#critic_error = 0.5*((y_target.detach() - self.critic_local(states_actions)) ** 2).mean()
+		for i in range(len(self.actors_local)):
+			self._train_actor(self.actors_local[i], self.actors_target[i], self.critics_local[i], states)
 
-		#self.critic_local.optimizer.zero_grad()
-		#critic_error.backward()
-		#torch.nn.utils.clip_grad_norm(self.critic_local.parameters(), 1)
-		#self.critic_local.optimizer.step()
+	def _train_actor(self, actor_local, actor_target, critics_local, states):
+		actions = self._compute_next_actions(self.actors_local, states)
 
-		#actions = self.actor_local(states)
-		#states_actions = torch.cat((states.float(), actions.float()), 1)
-		#action_error = -self.critic_local(states_actions).mean()
-		#self.actor_local.optimizer.zero_grad()
-		#action_error.backward()
-		#self.actor_local.optimizer.step()
+		states_actions = torch.cat((states.float().permute(1, 0, 2).reshape(self.batch_size, -1),
+									actions.float().permute(1, 0, 2).reshape(self.batch_size, -1)), 1)
 
-		#self.soft_update(self.critic_local, self.critic_target)
-		#self.soft_update(self.actor_local, self.actor_target)
-
-	def _train_actor(self, actor_local, actor_target, states):
-		actions = actor_local(states)
-		states_actions = torch.cat((states.float(), actions.float()), 1)
-		action_error = -self.critic_local(states_actions).mean()
+		action_error = -critics_local(states_actions).mean()
 		actor_local.optimizer.zero_grad()
 		action_error.backward()
 		actor_local.optimizer.step()
@@ -274,17 +260,15 @@ class MultiAgentDeterministicActorCriticAgent(BaseAgent):
 		self.soft_update(actor_local, actor_target)
 
 	def _train_critic(self, critic_local, critic_target, states_actions, next_states_actions, rewards, dones):
-
 		y_target = 100 * rewards + self.gamma * critic_target(next_states_actions) * (1 - dones)
 		critic_error = 0.5 * ((y_target.detach() - critic_local(states_actions)) ** 2).mean()
 
 		critic_local.optimizer.zero_grad()
 		critic_error.backward()
-		torch.nn.utils.clip_grad_norm(critic_local.parameters(), 1)
+		torch.nn.utils.clip_grad_norm_(critic_local.parameters(), 1)
 		critic_local.optimizer.step()
 
 		self.soft_update(critic_local, critic_target)
 
-
 	def _compute_next_actions(self, actors, next_states):
-		return np.stack([actors[i](next_states[i]) for i in range(len(actors))], axis=0)
+		return torch.stack([actors[i](next_states[i]) for i in range(len(actors))], 0)
