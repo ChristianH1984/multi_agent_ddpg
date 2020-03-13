@@ -11,11 +11,22 @@ where average is defined as the average of the maximum score of the agents in ea
   
  ![tennis](tennis.gif)
 
-
 ## Installation
+
+Download the environment matching your operating system:
+
+    - Linux: [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Linux.zip)
+    - Mac OSX: [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis.app.zip)
+    - Windows (32-bit): [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86.zip)
+    - Windows (64-bit): [click here](https://s3-us-west-1.amazonaws.com/udacity-drlnd/P3/Tennis/Tennis_Windows_x86_64.zip)
+    
+(For Windows users) Check out this link if you need help with determining if your computer is running a 32-bit version 
+or 64-bit version of the Windows operating system.
+
 Clone the github repo
 - git clone https://github.com/ChristianH1984/multi_agent_ddpg
 - cd multi_agent_ddpg
 - conda env create --name multi_agent_ddpg --file=environment.yml
 - activate multi_agent_ddpg
-- open Report.ipynb and enjoy exiting tennis matches
+- Place the uncompressed files into the folder multi_agent_ddpg 
+- open Report.ipynb, enter the path to the unity environment in the corresponding notebook cell and enjoy exciting tennis matches :-)
